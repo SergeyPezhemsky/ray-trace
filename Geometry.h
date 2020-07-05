@@ -77,4 +77,17 @@ private:
 	float3 c;
 };
 
+class Disk : public GeoObject {
+public:
+    Disk(const float3& o, const float& r, const float3& n, Material* a_m) : o(o), r(r), n(n), GeoObject(a_m) {}
+    ~Disk() = default;
+
+    bool Intersect(const Ray& ray, float tmin, float tmax, SurfHit& surf) const override;
+
+private:
+    float3 o;
+    float r;
+    float3 n;
+};
+
 #endif //RT_SAMPLE_NEW_GEOMETRY_H

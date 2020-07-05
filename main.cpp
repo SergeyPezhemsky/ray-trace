@@ -6,6 +6,7 @@
 #include "Geometry.h"
 #include "Camera.h"
 #include "LightSource.h"
+#include "stb-master/stb_image.h"
 
 using namespace HydraLiteMath;
 
@@ -16,7 +17,7 @@ struct Scene {
 
 void RenderScene(uint32_t w, uint32_t h, uint32_t num_samples, const Scene& scene, const Camera &cam, const std::string &filename)
 {
-  auto background_color = float3(0.5f, 0.7f, 1.0f);
+  auto background_color = float3(0.0f, 0.0f, 0.0f);
   auto film = std::make_unique<Film>(w, h, num_samples);
   auto tracer = std::make_unique<WhittedRT>(16, background_color);
 
@@ -61,7 +62,7 @@ void test_scene1()
   auto sph  = std::make_shared<Sphere> (float3(+0.5f, +8.0f, +1.25f), 0.8,   new IdealMirror(float3(1.00f, 0.32f, 0.36f)));
   auto sph2  = std::make_shared<Sphere> (float3(+0.0f, +2.5f, +0.0f), 2,   new Defuse(float3(0.70f, 0.72f, 0.76f)));
   auto par = std::make_shared<Parallel>(float3(+3.0f, -1.0f, +0.0f), float3(+5.0f, +3.0f, +6.0f), new Defuse(float3(1.00f, 0.32f, 0.36f)));
-  auto tr = std::make_shared<Triangle>(float3(+2.0f, 3.0f, +0.0f), float3(+4.0f, +5.0f, +2.0f), float3(+4.0f, +3.0f, +0.0f), new Defuse(float3(0.5f, 0.5f, 0.5f)));
+  auto tr = std::make_shared<Disk>(float3(-2.0f, 8.0f, 2.0f), 2, float3(0.0f, +1.0f, +0.0f), new Defuse(float3(0.0f, 0.0f, 1.0f)));
   scene.geoObjects.push_back(plane1);
   scene.geoObjects.push_back(sph);
   scene.geoObjects.push_back(par);

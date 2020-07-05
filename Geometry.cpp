@@ -155,3 +155,30 @@ bool Triangle::Intersect(const Ray &ray, float tmin, float tmax, SurfHit &surf) 
 	}
 	return false;
 }
+
+
+bool Disk::Intersect(const Ray& ray, float tmin, float tmax, SurfHit& surf) const
+{
+	float denom = dot(n, ray.d);
+	float t;
+	if (denom > tmin && denom < tmax) {
+		float3 p0l0 = o - ray.o;
+		t = dot(p0l0, n) / denom;
+		if (t >= 0) {
+			float3 p = ray.o + ray.d * t;
+			float3 v = p - o;
+			float d2 = dot(v, v);
+			if (sqrtf(d2) <= r) {
+				surf.t = t;
+				surf.hit = true;
+				surf.hitPoint = ray.o + t * ray.d;
+				surf.normal = normalize(surf.hitPoint);
+				surf.m_ptr = m_ptr;
+				return true;
+			}
+		}
+	}
+
+	return false;
+
+}
