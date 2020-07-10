@@ -9,7 +9,10 @@ set(SRC Geometry.cpp
         Material.cpp
         RayTracer.cpp
         main.cpp
-        LightSource.cpp)
+        LightSource.cpp
+        stb_image.h
+        texture.h
+        texture.cpp)
 
 add_executable(rt_sample_new ${SRC})
 

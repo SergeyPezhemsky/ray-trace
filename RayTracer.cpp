@@ -4,7 +4,7 @@
 #include "Geometry.h"
 #include <iostream>
 #include "LightSource.h"
-
+#include <random>
 
 //Базовый алгоритм трассировки луча
 float3 SimpleRT::TraceRay(const Ray & ray, const std::vector<std::shared_ptr<GeoObject>> &geo, const int &depth)
@@ -88,7 +88,6 @@ float3 WhittedRT::TraceRay(const Ray & ray, const std::vector<std::shared_ptr<Ge
 			float3 unit_direction = normalize(timeRay.d);
 			float t = 0.5f * (unit_direction.y + 1.0f);
 			timeColor = (1.0f - t) * float3(1.0f, 1.0f, 1.0f) + t * bg_color;
-
 			depth++;
 			break;
 		}
@@ -143,9 +142,108 @@ float3 WhittedRT::TraceRay(const Ray & ray, const std::vector<std::shared_ptr<Ge
 
 }
 
-// теневой луч возвращает информацию, есть ли какие-то объекты на пути луча от найденной точки пересечения
-// до источника света или нет
-bool WhittedRT::ShadowRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo) {
+
+float3 AmbientOcclusion::TraceRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo, const std::vector<std::shared_ptr<LightSource>>& ligth, int depth) {
+	float3 color = float3(1.0f, 1.0f, 1.0f);
+	float3 timeColor = float3(1.0f, 1.0f, 1.0f);
+	SurfHit surf;
+	Ray timeRay = ray;
+	while (depth < max_ray_depth) {
+		color *= timeColor;
+		float tnear = std::numeric_limits<float>::max();
+
+		int   geoIndex = -1;
+		SurfHit surf;
+
+		for (int i = 0; i < geo.size(); ++i)
+		{
+			SurfHit temp;
+			if (geo.at(i)->Intersect(timeRay, 0.001, tnear, temp))
+			{
+				if (temp.t < tnear)
+				{
+					tnear = temp.t;
+					geoIndex = i;
+					surf = temp;
+				}
+			}
+		}
+
+		if (geoIndex == -1)
+		{
+			float3 unit_direction = normalize(timeRay.d);
+			float t = 0.5f * (unit_direction.y + 1.0f);
+			timeColor = (1.0f - t) * float3(1.0f, 1.0f, 1.0f) + t * bg_color;
+			depth++;
+			break;
+		}
+
+		if (dot(timeRay.d, surf.normal) > 0)
+		{
+			surf.normal = -surf.normal;
+		}
+
+		Ray scattered;
+		if (typeid(*surf.m_ptr) != typeid(Light))
+		{
+			if (typeid(*surf.m_ptr).name() == typeid(Defuse).name())
+			{
+				timeColor = float3(0.1f, 0.1f, 0.1f);
+				float3 time;
+				int countOfLightSourses = 0;
+				for (int i = 0; i < ligth.size(); i++) {
+					Ray rayIn;
+					rayIn.o = ligth.at(i)->position;
+					rayIn.d = normalize(rayIn.o - surf.hitPoint);
+
+					Ray shadow(surf.hitPoint + normalize(surf.normal) * 10e-5, rayIn.d);
+					if (!ShadowRay(shadow, geo))
+					{
+						surf.m_ptr->Scatter(rayIn, surf, time, scattered);
+						timeColor += time * ligth.at(i)->color;
+						++countOfLightSourses;
+					}
+
+				}
+				float koef = 0.0f;
+				int samplesCount = 64;
+				for (int i = 0; i < samplesCount; i++) {
+					float r1 = (float)rand() / RAND_MAX/10;
+					Ray ray(surf.hitPoint, surf.hitPoint + getHemispherePosition(r1));
+					float hitPointDist;
+					if (skyRay(ray, geo, hitPointDist) != -1 && hitPointDist < 1) {
+						float tKoef = dot(normalize(ray.d), surf.normal);
+						koef += tKoef < 0 ? 0 : tKoef;
+					}
+				}
+				timeColor -= koef/samplesCount;
+				timeColor.x = timeColor.x < 0 ? 0 : timeColor.x;
+				timeColor.y = timeColor.y < 0 ? 0 : timeColor.y;
+				timeColor.z = timeColor.z < 0 ? 0 : timeColor.z;
+				break;
+			}
+			else if (surf.m_ptr->Scatter(timeRay, surf, timeColor, scattered))
+			{
+				timeRay = scattered;
+				depth++;
+			}
+			else
+			{
+				depth++;
+				timeColor = float3(0.0f, 0.0f, 0.0f);
+			}
+		}
+		else {
+			surf.m_ptr->Scatter(timeRay, surf, timeColor, scattered);
+			break;
+		}
+	}
+	color *= timeColor;
+	return color;
+
+}
+
+int AmbientOcclusion::skyRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo ,float& hitPointDist) {
 	Ray timeRay = ray;
 	float tnear = std::numeric_limits<float>::max();
 	int   geoIndex = -1;
@@ -155,12 +253,34 @@ bool WhittedRT::ShadowRay(const Ray& ray, const std::vector<std::shared_ptr<GeoO
 		SurfHit temp;
 		if (geo.at(i)->Intersect(timeRay, 0.001, tnear, temp))
 		{
-			if (temp.t < tnear)
-			{
-				tnear = temp.t;
-				geoIndex = i;
-				surf = temp;
-			}
+			tnear = temp.t;
+			geoIndex = i;
+			surf = temp;
+		}
+	}
+	hitPointDist = surf.t;
+	return geoIndex;
+}
+
+float3 AmbientOcclusion::getHemispherePosition(const float &r1) {
+	float z = r1;
+	float r = sqrt(max((float)0, 1.0f - z * z));
+	float phi = 2 * PI * r1;
+	return float3(r * std::cos(phi), r * std::sin(phi), z);
+}
+
+// теневой луч возвращает информацию, есть ли какие-то объекты на пути луча от найденной точки пересечения
+// до источника света или нет
+bool RayTrace::ShadowRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo) {
+	Ray timeRay = ray;
+	float tnear = std::numeric_limits<float>::max();
+	int   geoIndex = -1;
+	SurfHit surf;
+	for (int i = 0; i < geo.size(); ++i)
+	{
+		SurfHit temp;
+		if (geo.at(i)->Intersect(timeRay, 0.001, tnear, temp))
+		{
 			return true;
 		}
 	}

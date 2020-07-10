@@ -47,7 +47,7 @@ Film::Film()
 {
   h = 480;
   w = 640;
-  num_samples = 16;
+  num_samples = 128;
   gamma = 1.0f;
   inv_gamma = 1.0f;
   pixels.assign(w * h, HydraLiteMath::float3(0.0f, 0.0f, 0.0f));

@@ -1,4 +1,5 @@
 #include "Material.h"
+#include "texture.h"
 
 SurfHit& SurfHit::operator= (const SurfHit &rhs)
 {
@@ -10,6 +11,8 @@ SurfHit& SurfHit::operator= (const SurfHit &rhs)
   normal = rhs.normal;
   m_ptr = rhs.m_ptr;
   t = rhs.t;
+  u = rhs.u;
+  v = rhs.v;
 
   return (*this);
 }
@@ -35,8 +38,9 @@ bool IdealMirror::Scatter(const Ray &ray_in, const SurfHit &surf, float3 &attenu
 
 bool Defuse::Scatter(const Ray &ray_in, const SurfHit &surf, float3 &attenuation, Ray &ray_out)
 {
+    float3 color = texture->value(surf.u, surf.v);
 	float kd = dot(normalize(surf.normal), ray_in.d);
-	attenuation = color * max(kd, 0.0f);
+    attenuation = color * max(kd, 0.0f);
 	return false;
 }
 

@@ -7,6 +7,7 @@
 using namespace HydraLiteMath;
 
 class Material;
+class Texture;
 
 //Класс, хранящий данные для найденной точки пересечения
 class SurfHit
@@ -16,6 +17,8 @@ public:
   float3 hitPoint; // точка пересечения
   float3 normal;   // вектор нормали к поверхности в точке пересечения
   float  t;        // расстояние от начала луча до точки пересечения
+  float  u;        // текстурные координаты
+  float  v;        // текстурные координаты
 
   std::shared_ptr<Material> m_ptr; //материал объекта, с которым нашли пересечение
 
@@ -47,12 +50,13 @@ public:
 class Defuse : public Material
 {
 public:
-	Defuse(const float3 &a_color) : Material(), color(a_color) {};
+	Defuse(Texture* tex) : Material(), texture(tex) {};
 
 	bool Scatter(const Ray &ray_in, const SurfHit &surf, float3 &attenuation, Ray &ray_out) override;
 
-	float3 color;
+	Texture* texture;
 };
+
 
 class Light : public Material
 {

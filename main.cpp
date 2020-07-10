@@ -6,7 +6,9 @@
 #include "Geometry.h"
 #include "Camera.h"
 #include "LightSource.h"
-#include "stb-master/stb_image.h"
+#include "texture.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 using namespace HydraLiteMath;
 
@@ -17,9 +19,9 @@ struct Scene {
 
 void RenderScene(uint32_t w, uint32_t h, uint32_t num_samples, const Scene& scene, const Camera &cam, const std::string &filename)
 {
-  auto background_color = float3(0.0f, 0.0f, 0.0f);
+  auto background_color = float3(1.0f, 1.0f, 1.0f);
   auto film = std::make_unique<Film>(w, h, num_samples);
-  auto tracer = std::make_unique<WhittedRT>(16, background_color);
+  auto tracer = std::make_unique<AmbientOcclusion>(16, background_color);
 
   float invWidth  = 1.0f / float(w);
   float invHeight = 1.0f / float(h);
@@ -53,20 +55,42 @@ void test_scene1()
 {
   Scene scene;
 
-  auto lightSource1 = std::make_shared<LightSource>(float3(0.0f, 12.0f, 0.0f), float3(1.0f, 1.0f, 0.0f));
-  auto lightSource2 = std::make_shared<LightSource>(float3(2.0f, 5.0f, 0.0f), float3(1.0f, 0.0f, 0.0f));
+  int width, w1;
+  int height, h1;
+  int channels = 3;
+  unsigned char* tex1 = stbi_load("../../../textures/wood1.jpg",
+      &width,
+      &height,
+      &channels,
+      STBI_rgb);
+
+  unsigned char* tex2 = stbi_load("../../../textures/wood_planks_new_0025_01_s.jpg",
+      &w1,
+      &h1,
+      &channels,
+      STBI_rgb);
+  auto lightSource1 = std::make_shared<LightSource>(float3(0.0f, 12.0f, 0.0f), float3(1.0f, 1.0f, 1.0f));
+  auto lightSource2 = std::make_shared<LightSource>(float3(2.0f, 5.0f, 0.0f), float3(1.0f, 1.0f, 1.0f));
+  auto lightSource3 = std::make_shared<LightSource>(float3(0.0f, 2.5f, 6.5f), float3(1.0f, 1.0f, 1.0f));
   scene.lightSources.push_back(lightSource1);
   scene.lightSources.push_back(lightSource2);
+  scene.lightSources.push_back(lightSource3);
 
-  auto plane1 = std::make_shared<Plane>(float3(+0.0f, -1.0f, +0.0f), float3(0.0f, 1.0f, 0.0f), new Defuse(float3(1.0f, 0.0f, 0.0f)));
-  auto sph  = std::make_shared<Sphere> (float3(+0.5f, +8.0f, +1.25f), 0.8,   new IdealMirror(float3(1.00f, 0.32f, 0.36f)));
-  auto sph2  = std::make_shared<Sphere> (float3(+0.0f, +2.5f, +0.0f), 2,   new Defuse(float3(0.70f, 0.72f, 0.76f)));
-  auto par = std::make_shared<Parallel>(float3(+3.0f, -1.0f, +0.0f), float3(+5.0f, +3.0f, +6.0f), new Defuse(float3(1.00f, 0.32f, 0.36f)));
-  auto tr = std::make_shared<Disk>(float3(-2.0f, 8.0f, 2.0f), 2, float3(0.0f, +1.0f, +0.0f), new Defuse(float3(0.0f, 0.0f, 1.0f)));
+  auto plane1 = std::make_shared<Plane>(float3(+0.0f, -1.0f, +0.0f), float3(0.0f, 1.0f, 0.0f), new Defuse(new ImageTexture(tex2, w1, h1)));//ConstantTexture(float3(1.0f, 1.0f, 1.0f))new 
+  auto sph  = std::make_shared<Sphere> (float3(+0.5f, +8.0f, +11.95f), 0.8, new Defuse(new ConstantTexture(float3(1.0f, 1.0f, 1.0f))));
+  auto sph3  = std::make_shared<Sphere> (float3(+3.5f, +2.0f, +1.0f), 2, new Defuse(new ConstantTexture(float3(1.0f, 1.0f, 1.0f))));
+  auto sph4  = std::make_shared<Sphere> (float3(+4.5f, +2.0f, 5.0f), 1, new Defuse(new ConstantTexture(float3(1.0f, 1.0f, 1.0f))));
+  auto sph5  = std::make_shared<Sphere> (float3(+4.5f, +2.0f, 8.0f), 1, new Defuse(new ConstantTexture(float3(1.0f, 1.0f, 1.0f))));
+  auto sph2  = std::make_shared<Sphere> (float3(+0.0f, +2.5f, +1.0f), 2, new Defuse(new ConstantTexture(float3(1.0f, 1.0f, 1.0f))));//new ImageTexture(tex1, width, height))
+  auto par = std::make_shared<Parallel>(float3(+3.0f, -1.0f, 0.0f), float3(+5.0f, +3.0f, +6.0f), new Defuse(new ConstantTexture(float3(1.00f, 1.f, 1.f))));
+  auto tr = std::make_shared<Disk>(float3(-2.0f, 8.0f, 11.0f), 2, float3(0.0f, +1.0f, +0.0f), new Defuse(new ConstantTexture(float3(1.0f, 1.0f, 1.0f))));
   scene.geoObjects.push_back(plane1);
-  scene.geoObjects.push_back(sph);
+  //scene.geoObjects.push_back(sph);
+  scene.geoObjects.push_back(sph3);
+  scene.geoObjects.push_back(sph4);
+  scene.geoObjects.push_back(sph5);
   scene.geoObjects.push_back(par);
-  scene.geoObjects.push_back(tr);
+ // scene.geoObjects.push_back(tr);
   scene.geoObjects.push_back(sph2);
 
 
@@ -92,6 +116,13 @@ void random_scene(int n_objects)
   scene.geoObjects.push_back(par);
   int k = floor(sqrt(n_objects));
 
+  auto lightSource1 = std::make_shared<LightSource>(float3(0.0f, 12.0f, 0.0f), float3(1.0f, 1.0f, 1.0f));
+  auto lightSource2 = std::make_shared<LightSource>(float3(2.0f, 5.0f, 0.0f), float3(1.0f, 1.0f, 1.0f));
+  auto lightSource3 = std::make_shared<LightSource>(float3(0.0f, 2.5f, 6.5f), float3(1.0f, 1.0f, 1.0f));
+  scene.lightSources.push_back(lightSource1);
+  scene.lightSources.push_back(lightSource2);
+  scene.lightSources.push_back(lightSource3);
+
   std::random_device rand;
   std::mt19937 rng(rand());
   std::uniform_real_distribution<float> gen(0.0f, 1.0f);
@@ -99,7 +130,7 @@ void random_scene(int n_objects)
   for(int i = 0; i < n_objects; ++i)
   {
     float3 center(-10.0f + 20.0f * gen(rng), 10.0f * gen(rng), -30.0f  +  40.0f * gen(rng));
-    auto sph = std::make_shared<Sphere>(center, 0.05f + 3.0f * gen(rng), new Defuse(float3(gen(rng), gen(rng), gen(rng))));
+    auto sph = std::make_shared<Sphere>(center, 0.05f + 3.0f * gen(rng), new Defuse(new ConstantTexture(float3(gen(rng), gen(rng), gen(rng)))));
     scene.geoObjects.push_back(sph);
   }
 
@@ -117,7 +148,7 @@ void random_scene(int n_objects)
 int main()
 {
   test_scene1();
-  //random_scene(100);
+  //random_scene(30);
 
   return 0;
 }

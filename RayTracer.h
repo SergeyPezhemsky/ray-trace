@@ -25,6 +25,14 @@ public:
 };
 
 
+class RayTrace
+{
+public:
+    RayTrace() = default;
+    ~RayTrace() = default;
+    bool ShadowRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo);
+};
+
 class SimpleRT
 {
 public:
@@ -39,7 +47,7 @@ private:
   float3 bg_color;   // цвет фона
 };
 
-class WhittedRT
+class WhittedRT : public RayTrace
 {
 public:
 	WhittedRT() = default;
@@ -47,11 +55,26 @@ public:
 	~WhittedRT() = default;
 
 	float3 TraceRay(const Ray &ray, const std::vector<std::shared_ptr<GeoObject>> &geo, const std::vector<std::shared_ptr<LightSource>>& light, int depth);
-    bool ShadowRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo);
 
 private:
 	int max_ray_depth; // максимальная глубина трассировки
 	float3 bg_color;   // цвет фона
 };
+
+class AmbientOcclusion : public RayTrace
+{
+public: 
+    AmbientOcclusion() = default;
+    AmbientOcclusion(const int& a_max_ray_depth, const float3& a_bg_color) : max_ray_depth(a_max_ray_depth), bg_color(a_bg_color) {};
+
+    float3 TraceRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo, const std::vector<std::shared_ptr<LightSource>>& light, int depth);
+
+    int skyRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo, float& hitPointDist);
+    float3 getHemispherePosition(const float &r1);
+private:
+    int max_ray_depth; // максимальная глубина трассировки
+    float3 bg_color;   // цвет фона
+};
+
 
 #endif //RT_SAMPLE_NEW_RAY_H
