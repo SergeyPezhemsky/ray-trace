@@ -213,7 +213,7 @@ float3 AmbientOcclusion::TraceRay(const Ray& ray, const std::vector<std::shared_
 					Ray ray(surf.hitPoint + normalize(surf.normal) * 10e-5, surf.hitPoint + getHemispherePosition(r1, r2));
 					float hitPointDist;
 					if (skyRay(ray, geo, hitPointDist) != -1 && hitPointDist < 5) {
-						koef -= 0.2;
+						koef -= 0.3;
 					}
 				}
 				timeColor *= koef/samplesCount;

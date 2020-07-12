@@ -76,11 +76,12 @@ void test_scene1()
   scene.lightSources.push_back(lightSource2);
   scene.lightSources.push_back(lightSource3);
 
-  auto plane1 = std::make_shared<Plane>(float3(+0.0f, -1.0f, +0.0f), float3(0.0f, 1.0f, 0.0f), new Defuse(new ImageTexture(tex2, w1, h1)));//ConstantTexture(float3(1.0f, 1.0f, 1.0f))new 
+  auto plane1 = std::make_shared<Plane>(float3(+0.0f, -1.0f, +0.0f), float3(0.0f, 1.0f, 0.0f), new Defuse(new ImageTexture(tex2, w1, h1)));//new ConstantTexture(float3(1.0f, 1.0f, 1.0f))
   auto sph  = std::make_shared<Sphere> (float3(+0.5f, +8.0f, +11.95f), 0.8, new Defuse(new ConstantTexture(float3(1.0f, 1.0f, 1.0f))));
   auto sph3  = std::make_shared<Sphere> (float3(+3.5f, +2.0f, +1.0f), 2, new Defuse(new ConstantTexture(float3(1.0f, 1.0f, 1.0f))));
   auto sph4  = std::make_shared<Sphere> (float3(+4.5f, +2.0f, 5.0f), 1, new Defuse(new ConstantTexture(float3(1.0f, 1.0f, 1.0f))));
   auto sph5  = std::make_shared<Sphere> (float3(+4.5f, +2.0f, 8.0f), 1, new Defuse(new ConstantTexture(float3(1.0f, 1.0f, 1.0f))));
+  auto sph6  = std::make_shared<Sphere> (float3(+1.5f, -1.0f, 9.0f), 1, new Defuse(new ConstantTexture(float3(1.0f, 1.0f, 1.0f))));
   auto sph2  = std::make_shared<Sphere> (float3(+0.0f, +2.5f, +1.0f), 2, new Defuse(new ConstantTexture(float3(1.0f, 1.0f, 1.0f))));//new ImageTexture(tex1, width, height))
   auto par = std::make_shared<Parallel>(float3(+3.0f, -1.0f, 0.0f), float3(+5.0f, +3.0f, +6.0f), new Defuse(new ConstantTexture(float3(1.00f, 1.f, 1.f))));
   auto tr = std::make_shared<Disk>(float3(-2.0f, 8.0f, 11.0f), 2, float3(0.0f, +1.0f, +0.0f), new Defuse(new ConstantTexture(float3(1.0f, 1.0f, 1.0f))));
@@ -89,6 +90,7 @@ void test_scene1()
   scene.geoObjects.push_back(sph3);
   scene.geoObjects.push_back(sph4);
   scene.geoObjects.push_back(sph5);
+  scene.geoObjects.push_back(sph6);
   scene.geoObjects.push_back(par);
  // scene.geoObjects.push_back(tr);
   scene.geoObjects.push_back(sph2);
