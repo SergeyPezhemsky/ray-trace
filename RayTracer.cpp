@@ -7,57 +7,57 @@
 #include <random>
 
 //Базовый алгоритм трассировки луча
-float3 SimpleRT::TraceRay(const Ray & ray, const std::vector<std::shared_ptr<GeoObject>> &geo, const int &depth)
+float3 SimpleRT::TraceRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo, const int& depth)
 {
-  float tnear = std::numeric_limits<float>::max();
-  int   geoIndex = -1;
+	float tnear = std::numeric_limits<float>::max();
+	int   geoIndex = -1;
 
-  SurfHit surf;
+	SurfHit surf;
 
-  //среди геометрии сцены ищем объекты, с которыми пересекается текущий луч и находим ближайшее пересечение
-  for (int i = 0; i < geo.size(); ++i)
-  {
-    SurfHit temp;
+	//среди геометрии сцены ищем объекты, с которыми пересекается текущий луч и находим ближайшее пересечение
+	for (int i = 0; i < geo.size(); ++i)
+	{
+		SurfHit temp;
 
-    if (geo.at(i)->Intersect(ray, 0.001, tnear, temp))
-    {
-      if (temp.t < tnear)
-      {
-        tnear = temp.t;
-        geoIndex = i;
-        surf = temp;
-      }
-    }
-  }
+		if (geo.at(i)->Intersect(ray, 0.001, tnear, temp))
+		{
+			if (temp.t < tnear)
+			{
+				tnear = temp.t;
+				geoIndex = i;
+				surf = temp;
+			}
+		}
+	}
 
-  //если луч не пересек ни один объект, то значит он улетел в фон
-  //вычисляем цвет как градиент цвета фона
-  if (geoIndex == -1)
-  {
-    float3 unit_direction = normalize(ray.d);
-    float t = 0.5f * (unit_direction.y + 1.0f);
+	//если луч не пересек ни один объект, то значит он улетел в фон
+	//вычисляем цвет как градиент цвета фона
+	if (geoIndex == -1)
+	{
+		float3 unit_direction = normalize(ray.d);
+		float t = 0.5f * (unit_direction.y + 1.0f);
 
-    return (1.0f - t) * float3(1.0f, 1.0f, 1.0f) + t * bg_color;
-  }
+		return (1.0f - t) * float3(1.0f, 1.0f, 1.0f) + t * bg_color;
+	}
 
-  float3 surfColor(0.0f, 0.0f, 0.0f);
-  if (dot(ray.d, surf.normal) > 0)
-  {
-    surf.normal = -surf.normal;
-  }
+	float3 surfColor(0.0f, 0.0f, 0.0f);
+	if (dot(ray.d, surf.normal) > 0)
+	{
+		surf.normal = -surf.normal;
+	}
 
-  Ray scattered;
-  if (depth < max_ray_depth && surf.m_ptr->Scatter(ray, surf, surfColor, scattered))
+	Ray scattered;
+	if (depth < max_ray_depth && surf.m_ptr->Scatter(ray, surf, surfColor, scattered))
 	{
 		return surfColor * TraceRay(scattered, geo, depth + 1);
 	}
 	else
-	  {
+	{
 		return float3(0.0f, 0.0f, 0.0f);
-	  }
+	}
 }
 
-float3 WhittedRT::TraceRay(const Ray & ray, const std::vector<std::shared_ptr<GeoObject>> &geo, const std::vector<std::shared_ptr<LightSource>>& ligth, int depth) {
+float3 WhittedRT::TraceRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo, const std::vector<std::shared_ptr<LightSource>>& ligth, int depth) {
 	float3 color = float3(1.0f, 1.0f, 1.0f);
 	float3 timeColor = float3(1.0f, 1.0f, 1.0f);
 	SurfHit surf;
@@ -111,7 +111,7 @@ float3 WhittedRT::TraceRay(const Ray & ray, const std::vector<std::shared_ptr<Ge
 					rayIn.d = normalize(rayIn.o - surf.hitPoint);
 
 
-					Ray shadow(surf.hitPoint + normalize(surf.normal) * 10e-5, rayIn.d);
+					Ray shadow(surf.hitPoint + normalize(surf.normal) * 10e-5, rayIn.o);
 					if (!ShadowRay(shadow, geo))
 					{
 						surf.m_ptr->Scatter(rayIn, surf, time, scattered);
@@ -186,9 +186,9 @@ float3 AmbientOcclusion::TraceRay(const Ray& ray, const std::vector<std::shared_
 		Ray scattered;
 		if (typeid(*surf.m_ptr) != typeid(Light))
 		{
-			if (typeid(*surf.m_ptr).name() == typeid(Defuse).name())
+			if(typeid(*surf.m_ptr).name() == typeid(Defuse).name())
 			{
-				timeColor = float3(0.1f, 0.1f, 0.1f);
+				timeColor = float3(0.0f, 0.0f, 0.0f);
 				float3 time;
 				int countOfLightSourses = 0;
 				for (int i = 0; i < ligth.size(); i++) {
@@ -196,27 +196,27 @@ float3 AmbientOcclusion::TraceRay(const Ray& ray, const std::vector<std::shared_
 					rayIn.o = ligth.at(i)->position;
 					rayIn.d = normalize(rayIn.o - surf.hitPoint);
 
-					Ray shadow(surf.hitPoint + normalize(surf.normal) * 10e-5, rayIn.d);
+
+					Ray shadow(surf.hitPoint + normalize(surf.normal) * 10e-5, rayIn.o);
 					if (!ShadowRay(shadow, geo))
 					{
 						surf.m_ptr->Scatter(rayIn, surf, time, scattered);
 						timeColor += time * ligth.at(i)->color;
 						++countOfLightSourses;
 					}
-
 				}
 				float koef = 64.0f;
 				int samplesCount = 64;
 				for (int i = 0; i < samplesCount; i++) {
-					float r1 = (float)rand() / RAND_MAX/10;
-					float r2 = (float)rand() / RAND_MAX/10;
+					float r1 = (float)rand() / RAND_MAX / 10;
+					float r2 = (float)rand() / RAND_MAX / 10;
 					Ray ray(surf.hitPoint + normalize(surf.normal) * 10e-5, surf.hitPoint + getHemispherePosition(r1, r2));
 					float hitPointDist;
 					if (skyRay(ray, geo, hitPointDist) != -1 && hitPointDist < 5) {
 						koef -= 0.3;
 					}
 				}
-				timeColor *= koef/samplesCount;
+				timeColor *= koef / samplesCount;
 				break;
 			}
 			else if (surf.m_ptr->Scatter(timeRay, surf, timeColor, scattered))
@@ -240,7 +240,7 @@ float3 AmbientOcclusion::TraceRay(const Ray& ray, const std::vector<std::shared_
 
 }
 
-int AmbientOcclusion::skyRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo ,float& hitPointDist) {
+int AmbientOcclusion::skyRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo, float& hitPointDist) {
 	Ray timeRay = ray;
 	float tnear = std::numeric_limits<float>::max();
 	int   geoIndex = -1;
@@ -259,7 +259,7 @@ int AmbientOcclusion::skyRay(const Ray& ray, const std::vector<std::shared_ptr<G
 	return geoIndex;
 }
 
-float3 AmbientOcclusion::getHemispherePosition(const float &r1, const float& r2) {
+float3 AmbientOcclusion::getHemispherePosition(const float& r1, const float& r2) {
 	float z = r1;
 	float r = sqrt(max((float)0, 1.0f - z * z));
 	float phi = 2 * PI * r2;
@@ -269,7 +269,7 @@ float3 AmbientOcclusion::getHemispherePosition(const float &r1, const float& r2)
 // теневой луч возвращает информацию, есть ли какие-то объекты на пути луча от найденной точки пересечения
 // до источника света или нет
 bool RayTrace::ShadowRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo) {
-	Ray timeRay = ray;
+	Ray timeRay(ray);
 	float tnear = std::numeric_limits<float>::max();
 	int   geoIndex = -1;
 	SurfHit surf;

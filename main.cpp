@@ -72,9 +72,11 @@ void test_scene1()
   auto lightSource1 = std::make_shared<LightSource>(float3(0.0f, 12.0f, 0.0f), float3(1.0f, 1.0f, 1.0f));
   auto lightSource2 = std::make_shared<LightSource>(float3(2.0f, 5.0f, 0.0f), float3(1.0f, 1.0f, 1.0f));
   auto lightSource3 = std::make_shared<LightSource>(float3(0.0f, 2.5f, 6.5f), float3(1.0f, 1.0f, 1.0f));
+  auto lightSource4 = std::make_shared<LightSource>(float3(0.0f, 0.0f, 8.0f), float3(1.0f, 1.0f, 1.0f));
   scene.lightSources.push_back(lightSource1);
   scene.lightSources.push_back(lightSource2);
   scene.lightSources.push_back(lightSource3);
+  //scene.lightSources.push_back(lightSource4);
 
   auto plane1 = std::make_shared<Plane>(float3(+0.0f, -1.0f, +0.0f), float3(0.0f, 1.0f, 0.0f), new Defuse(new ImageTexture(tex2, w1, h1)));//new ConstantTexture(float3(1.0f, 1.0f, 1.0f))
   auto sph  = std::make_shared<Sphere> (float3(+0.5f, +8.0f, +11.95f), 0.8, new Defuse(new ConstantTexture(float3(1.0f, 1.0f, 1.0f))));
