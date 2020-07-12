@@ -205,21 +205,18 @@ float3 AmbientOcclusion::TraceRay(const Ray& ray, const std::vector<std::shared_
 					}
 
 				}
-				float koef = 0.0f;
+				float koef = 64.0f;
 				int samplesCount = 64;
 				for (int i = 0; i < samplesCount; i++) {
 					float r1 = (float)rand() / RAND_MAX/10;
-					Ray ray(surf.hitPoint, surf.hitPoint + getHemispherePosition(r1));
+					float r2 = (float)rand() / RAND_MAX/10;
+					Ray ray(surf.hitPoint + normalize(surf.normal) * 10e-5, surf.hitPoint + getHemispherePosition(r1, r2));
 					float hitPointDist;
-					if (skyRay(ray, geo, hitPointDist) != -1 && hitPointDist < 1) {
-						float tKoef = dot(normalize(ray.d), surf.normal);
-						koef += tKoef < 0 ? 0 : tKoef;
+					if (skyRay(ray, geo, hitPointDist) != -1 && hitPointDist < 5) {
+						koef -= 0.2;
 					}
 				}
-				timeColor -= koef/samplesCount;
-				timeColor.x = timeColor.x < 0 ? 0 : timeColor.x;
-				timeColor.y = timeColor.y < 0 ? 0 : timeColor.y;
-				timeColor.z = timeColor.z < 0 ? 0 : timeColor.z;
+				timeColor *= koef/samplesCount;
 				break;
 			}
 			else if (surf.m_ptr->Scatter(timeRay, surf, timeColor, scattered))
@@ -262,10 +259,10 @@ int AmbientOcclusion::skyRay(const Ray& ray, const std::vector<std::shared_ptr<G
 	return geoIndex;
 }
 
-float3 AmbientOcclusion::getHemispherePosition(const float &r1) {
+float3 AmbientOcclusion::getHemispherePosition(const float &r1, const float& r2) {
 	float z = r1;
 	float r = sqrt(max((float)0, 1.0f - z * z));
-	float phi = 2 * PI * r1;
+	float phi = 2 * PI * r2;
 	return float3(r * std::cos(phi), r * std::sin(phi), z);
 }
 
