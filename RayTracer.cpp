@@ -111,7 +111,7 @@ float3 WhittedRT::TraceRay(const Ray& ray, const std::vector<std::shared_ptr<Geo
 					rayIn.d = normalize(rayIn.o - surf.hitPoint);
 
 
-					Ray shadow(surf.hitPoint + normalize(surf.normal) * 10e-5, rayIn.o);
+					Ray shadow(surf.hitPoint + normalize(surf.normal) * 10e-5, rayIn.d);
 					if (!ShadowRay(shadow, geo))
 					{
 						surf.m_ptr->Scatter(rayIn, surf, time, scattered);
@@ -186,7 +186,7 @@ float3 AmbientOcclusion::TraceRay(const Ray& ray, const std::vector<std::shared_
 		Ray scattered;
 		if (typeid(*surf.m_ptr) != typeid(Light))
 		{
-			if(typeid(*surf.m_ptr).name() == typeid(Defuse).name())
+			if (typeid(*surf.m_ptr).name() == typeid(Defuse).name())
 			{
 				timeColor = float3(0.0f, 0.0f, 0.0f);
 				float3 time;
@@ -196,8 +196,7 @@ float3 AmbientOcclusion::TraceRay(const Ray& ray, const std::vector<std::shared_
 					rayIn.o = ligth.at(i)->position;
 					rayIn.d = normalize(rayIn.o - surf.hitPoint);
 
-
-					Ray shadow(surf.hitPoint + normalize(surf.normal) * 10e-5, rayIn.o);
+					Ray shadow(surf.hitPoint + normalize(surf.normal) * 10e-5, rayIn.d);
 					if (!ShadowRay(shadow, geo))
 					{
 						surf.m_ptr->Scatter(rayIn, surf, time, scattered);
@@ -206,16 +205,19 @@ float3 AmbientOcclusion::TraceRay(const Ray& ray, const std::vector<std::shared_
 					}
 				}
 				float koef = 64.0f;
+				float aoMult = 1.0f;
+				float aoDistance = 0.5f;
 				int samplesCount = 64;
-				for (int i = 0; i < samplesCount; i++) {
-					float r1 = (float)rand() / RAND_MAX / 10;
-					float r2 = (float)rand() / RAND_MAX / 10;
-					Ray ray(surf.hitPoint + normalize(surf.normal) * 10e-5, surf.hitPoint + getHemispherePosition(r1, r2));
+				for (int i = 0; i < samplesCount; i++)
+				{
+					float3 random_vec = getHemispherePosition(surf.normal);
+					Ray ray(surf.hitPoint + normalize(surf.normal) * 10e-5, random_vec);
 					float hitPointDist;
-					if (skyRay(ray, geo, hitPointDist) != -1 && hitPointDist < 5) {
-						koef -= 0.3;
+					if (skyRay(ray, geo, hitPointDist) != -1 && hitPointDist < aoDistance) {
+						koef -= aoMult * 1.0f;
 					}
 				}
+
 				timeColor *= koef / samplesCount;
 				break;
 			}
@@ -259,11 +261,22 @@ int AmbientOcclusion::skyRay(const Ray& ray, const std::vector<std::shared_ptr<G
 	return geoIndex;
 }
 
-float3 AmbientOcclusion::getHemispherePosition(const float& r1, const float& r2) {
-	float z = r1;
-	float r = sqrt(max((float)0, 1.0f - z * z));
-	float phi = 2 * PI * r2;
-	return float3(r * std::cos(phi), r * std::sin(phi), z);
+
+
+float3 AmbientOcclusion::getHemispherePosition(const float3 normal) {
+	float random_x, random_y;
+	random_x = float(rand()) / RAND_MAX;
+	random_y = float(rand()) / RAND_MAX;
+	float3 tangent, bitangent;
+	tangent.z = 0.0f;
+	tangent.y = -1.0f;
+	tangent.x = normal.y / normal.x;
+	tangent = normalize(tangent);
+	bitangent = normalize(cross(tangent, normal));
+
+	float3 diff = tangent * (sqrtf(random_x)) * cosf(2 * PI * random_y)
+		+ bitangent * (sqrtf(random_x)) * sinf(2 * PI * random_y) + normal * sqrt(1 - random_x);
+	return normalize(diff);
 }
 
 // теневой луч возвращает информацию, есть ли какие-то объекты на пути луча от найденной точки пересечения

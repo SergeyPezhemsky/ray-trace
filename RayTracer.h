@@ -70,7 +70,7 @@ public:
     float3 TraceRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo, const std::vector<std::shared_ptr<LightSource>>& light, int depth);
 
     int skyRay(const Ray& ray, const std::vector<std::shared_ptr<GeoObject>>& geo, float& hitPointDist);
-    float3 getHemispherePosition(const float &r1, const float& r2);
+    float3 getHemispherePosition(const float3 normal);
 private:
     int max_ray_depth; // максимальная глубина трассировки
     float3 bg_color;   // цвет фона
